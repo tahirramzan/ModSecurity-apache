@@ -143,7 +143,7 @@ void *apache_http_modsecurity_create_loc_conf(apr_pool_t *mp, char *path){
     cf->id = 0;
     fprintf(stderr,"ModSecurity creating a location configurationn\n");
     msc_rules_dump(cf->rules_set);
-fprintf(stderr,"ModSecurity creating a location configurationn\n");
+
     return cf;
 }
 
