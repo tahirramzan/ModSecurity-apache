@@ -3,8 +3,9 @@
 #include "http_config.h"
 #include "http_protocol.h"
 #include "http_request.h"
+#include "http_connection.h"
+#include "apr_strings.h"
 #include <modsecurity/modsecurity.h>
-//#include <modsecurity/assay.h>
 #include <modsecurity/rules.h>
 #include <modsecurity/intervention.h>
 
