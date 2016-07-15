@@ -114,18 +114,10 @@ static void* apache_http_modsecurity_merge_loc_conf(apr_pool_t* pool, void* pare
 }
 
 void *apache_http_modsecurity_create_main_conf(apr_pool_t* pool, server_rec* svr) {
-    // This doesn't really do anything right now...
-    apache_http_modsecurity_main_conf_t *config = apr_pcalloc(pool, sizeof(apache_http_modsecurity_main_conf_t));
-    config->modsec = msc_init();
-    if(config->modsec == NULL){
-    	fprintf(stderr,"ModSecurity: We were unable to initalize the ModSecurity library, skipping hooks\n");
-    	return NULL;
-    }else{
-    	fprintf(stderr,"ModSecurity: Started Life...\n");
-    }
-    msc_set_connector_info(config->modsec, "ModSecurity-apache v0.0.1-alpha");
-    //msc_set_log_cb(config.modsec, ngx_http_modsecurity_log);
-    return config;
+    conf_t *ptr = apr_pcalloc(pool, sizeof *ptr);
+    ptr->enable_input = 0;
+    ptr->enable_output = 0;
+    return ptr;
     
 }
 
@@ -164,6 +156,22 @@ static int modsec_handler(request_rec *r)
     if (!r->handler || strcmp(r->handler, "mod-basics")) return (DECLINED);
     ap_rputs("Welcome to ModSec!<br/>", r);
     return OK;
+}
+
+static const char *enable_input(cmd_parms *cmd, void *v, int i)
+{
+    conf_t *ptr = ap_get_module_config(cmd->server->module_config, &security3_module);
+
+    ptr->enable_input = i;
+    return NULL;
+}
+
+static const char *enable_output(cmd_parms *cmd, void *v, int i)
+{
+    conf_t *ptr = ap_get_module_config(cmd->server->module_config, &security3_module);
+
+    ptr->enable_output = i;
+    return NULL;
 }
 
 static int pre_conn(conn_rec *c)
@@ -217,3 +225,4 @@ static int output_filter (ap_filter_t *f, apr_bucket_brigade *bb)
 
     return ap_pass_brigade(f->next, bb) ;
 }
+
