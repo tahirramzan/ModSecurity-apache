@@ -18,7 +18,7 @@ void *apache_http_modsecurity_create_main_conf(apr_pool_t* pool, server_rec* svr
 static void* apache_http_modsecurity_merge_loc_conf(apr_pool_t* pool, void* parent, void* child);
 const char  *apache_http_modsecurity_set_remote_server(cmd_parms *cmd, void *cfg, const char *p1, const char *p2);
 
-static int pre_conn(conn_rec *c);
+static int pre_con(conn_rec *c);
 static const char *enable_input(cmd_parms *cmd, void *v, int i);
 static const char *enable_output(cmd_parms *cmd, void *v, int i);
 static int output_filter (ap_filter_t *f, apr_bucket_brigade *bb);
