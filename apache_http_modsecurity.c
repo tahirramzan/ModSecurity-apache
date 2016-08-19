@@ -1,36 +1,5 @@
 #include "apache_http_modsecurity.h"
 
-typedef struct conf_t {
-    int enable_input;
-    int enable_output;
-} conf_t;
-
-typedef struct {
-    ModSecurity *modsec;
-} apache_http_modsecurity_main_conf_t;
-
-typedef struct {
-    Rules *rules_set;
-    char *rules;
-    char *rules_file;
-    const char *rules_remote_server;
-    const char *rules_remote_key;
-    int enable;
-    int id;
-} apache_http_modsecurity_loc_conf_t;
-
-const char *apache_http_modsecurity_set_remote_server(cmd_parms *cmd, void *cfg, const char *p1, const char *p2) {
-    apache_http_modsecurity_loc_conf_t *cf = (apache_http_modsecurity_loc_conf_t *) cfg;
-    if (cf == NULL) {
-        return "ModSecurity's remote_server processing directive didn't get an instance of the Apache config, we can't continue";
-    }
-    // Add checks here for p1 and p2 spec
-    cf->rules_remote_key = p1;
-    cf->rules_remote_server = p2;
-    fprintf(stderr, "ModSecurity: License Key: %s, URI: %s\n", p1, p2);
-    return NULL;
-}
-
 static const command_rec module_directives[] =
         {
                 AP_INIT_FLAG("modsecurity", ap_set_flag_slot,
@@ -44,23 +13,22 @@ static const command_rec module_directives[] =
                 AP_INIT_TAKE1("modsecurity_rules", ap_set_string_slot,
                               (void *) APR_OFFSETOF(apache_http_modsecurity_loc_conf_t, rules), OR_OPTIONS,
                               "Please ensure that the arugment is specified correctly, including line continuations."),
-                AP_INIT_FLAG("IOInput", enable_input, NULL, RSRC_CONF, "Enable Input Data"),
-                AP_INIT_FLAG("IOOutput", enable_output, NULL, RSRC_CONF, "Enable Output Data"),
+                AP_INIT_FLAG("IN", FilterInEnable, NULL, RSRC_CONF, "Enable Input Data"),
+                AP_INIT_FLAG("OUT", FilterOutEnable, NULL, RSRC_CONF, "Enable Output Data"),
                 {NULL}
         };
 
-
-module AP_MODULE_DECLARE_DATA
-security3_module =
-        {
-                STANDARD20_MODULE_STUFF,
-                apache_http_modsecurity_create_loc_conf, // Per-directory configuration
-                apache_http_modsecurity_merge_loc_conf, // Merge handler for per-directory
-                apache_http_modsecurity_create_main_conf, // Per-server conf handler
-                NULL,            // Merge handler for per-server configurations
-                module_directives,
-                register_hooks
-        };
+const char *apache_http_modsecurity_set_remote_server(cmd_parms *cmd, void *cfg, const char *p1, const char *p2) {
+    apache_http_modsecurity_loc_conf_t *cf = (apache_http_modsecurity_loc_conf_t *) cfg;
+    if (cf == NULL) {
+        return "ModSecurity's remote_server processing directive didn't get an instance of the Apache config, we can't continue";
+    }
+    // Add checks here for p1 and p2 spec
+    cf->rules_remote_key = p1;
+    cf->rules_remote_server = p2;
+    fprintf(stderr, "ModSecurity: License Key: %s, URI: %s\n", p1, p2);
+    return NULL;
+}
 
 static void *apache_http_modsecurity_merge_loc_conf(apr_pool_t *pool, void *parent, void *child) {
     fprintf(stderr, "Merge Request was called\n\n");
@@ -117,10 +85,8 @@ static void *apache_http_modsecurity_merge_loc_conf(apr_pool_t *pool, void *pare
 }
 
 void *apache_http_modsecurity_create_main_conf(apr_pool_t *pool, server_rec *svr) {
-    conf_t *ptr = apr_pcalloc(pool, sizeof *ptr);
-    ptr->enable_input = 1;
-    ptr->enable_output = 1;
-    return ptr;
+    
+   // return 1;
 
 }
 
@@ -151,9 +117,46 @@ void *apache_http_modsecurity_create_loc_conf(apr_pool_t *mp, char *path) {
 
 static void register_hooks(apr_pool_t *pool) {
     ap_hook_handler(modsec_handler, NULL, NULL, APR_HOOK_FIRST);
-    ap_hook_pre_connection(pre_con, NULL, NULL, APR_HOOK_FIRST);
-    ap_register_output_filter("OUT", output_filter, NULL, AP_FTYPE_CONNECTION + 3);
-    ap_register_input_filter("IN", input_filter, NULL, AP_FTYPE_CONNECTION + 3);
+ //   ap_hook_pre_connection(pre_con, NULL, NULL, APR_HOOK_FIRST);
+    ap_hook_insert_filter(OutputFilter, NULL, NULL, APR_HOOK_FIRST);
+    ap_register_output_filter("OUT", output_filter, NULL, AP_FTYPE_RESOURCE);
+    ap_hook_insert_filter(InputFilter, NULL, NULL, APR_HOOK_FIRST);
+    ap_register_input_filter("IN", input_filter, NULL, AP_FTYPE_RESOURCE);
+}
+
+static const char *FilterInEnable(cmd_parms *cmd, void *dummy, int arg)
+{
+    FilterConfig *pConfig = ap_get_module_config(cmd->server->module_config, &security3_module);
+    pConfig->iEnabled=arg;
+
+    return NULL;
+}
+
+static const char *FilterOutEnable(cmd_parms *cmd, void *dummy, int arg)
+{
+    FilterConfig *pConfig = ap_get_module_config(cmd->server->module_config, &security3_module);
+    pConfig->oEnabled=arg;
+
+    return NULL;
+}
+
+static void OutputFilter(request_rec *r)
+{
+    FilterConfig *pConfig = ap_get_module_config(r->server->module_config, &security3_module);
+
+    if (!pConfig->oEnabled)
+        return;
+
+    ap_add_output_filter("OUT", NULL, r, r->connection);
+}
+
+static void InputFilter(request_rec *r)
+{
+    FilterConfig *pConfig = ap_get_module_config(r->server->module_config, &security3_module);
+    if (!pConfig->iEnabled)
+        return;
+
+    ap_add_input_filter("IN", NULL, r, r->connection);
 }
 
 static int modsec_handler(request_rec *r) {
@@ -162,66 +165,124 @@ static int modsec_handler(request_rec *r) {
     return OK;
 }
 
-static const char *enable_input(cmd_parms *cmd, void *v, int i) {
-    conf_t *ptr = ap_get_module_config(cmd->server->module_config, &security3_module);
 
-    ptr->enable_input = i;
-    return NULL;
+
+static void *FilterOutCreateServerConfig(apr_pool_t *p, server_rec *s)
+{
+    FilterConfig *pConfig = apr_pcalloc(p,sizeof *pConfig);
+
+    pConfig->oEnabled = 1;
+
+    return pConfig;
 }
 
-static const char *enable_output(cmd_parms *cmd, void *v, int i) {
-    conf_t *ptr = ap_get_module_config(cmd->server->module_config, &security3_module);
+static void *FilterInCreateServerConfig(apr_pool_t *p, server_rec *s)
+{
+    FilterConfig *pConfig = apr_pcalloc(p, sizeof *pConfig);
 
-    ptr->enable_output = i;
-    return NULL;
+    pConfig->iEnabled = 1;
+
+    return pConfig;
 }
 
-static int pre_con(conn_rec *c) {
-    conf_t *ptr;
-    ptr = (conf_t *) ap_get_module_config(c->base_server->module_config, &security3_module);
+static int input_filter(ap_filter_t *f, apr_bucket_brigade *pbbOut,
+                        ap_input_mode_t eMode, apr_read_type_e eBlock, apr_off_t nBytes) {
 
-    if (ptr->enable_input)
-        ap_add_input_filter("IN", ptr, NULL, c);
-    if (ptr->enable_output)
-        ap_add_output_filter("OUT", ptr, NULL, c);
-    return OK;
-}
-
-static int input_filter(ap_filter_t *f, apr_bucket_brigade *bb,
-                        ap_input_mode_t mode, apr_read_type_e block, apr_off_t readbytes) {
-    apr_bucket *b;
+    request_rec *r = f->r;
+    conn_rec *c = r->connection;
+    FilterContext *pCtx;
     apr_status_t ret;
-    conn_rec *c = f->c;
-    conf_t *ptr = f->ctx;
 
-    ret = ap_get_brigade(f->next, bb, mode, block, readbytes);
-
-    if (ret == APR_SUCCESS) {
-        for (b = APR_BRIGADE_FIRST(bb); b != APR_BRIGADE_SENTINEL(bb); b = APR_BUCKET_NEXT(b)) {
-            //Next
-        }
+    if (!(pCtx = f->ctx)) {
+        f->ctx = pCtx = apr_palloc(r->pool, sizeof *pCtx);
+        pCtx->pbbTmp = apr_brigade_create(r->pool, c->bucket_alloc);
     }
-    else {
-        return ret;
+
+    if (APR_BRIGADE_EMPTY(pCtx->pbbTmp)) {
+        ret = ap_get_brigade(f->next, pCtx->pbbTmp, eMode, eBlock, nBytes);
+
+        if (eMode == AP_MODE_EATCRLF || ret != APR_SUCCESS)
+            return ret;
+    }
+
+    while (!APR_BRIGADE_EMPTY(pCtx->pbbTmp)) {
+        apr_bucket *pbktIn = APR_BRIGADE_FIRST(pCtx->pbbTmp);
+        apr_bucket *pbktOut;
+        const char *data;
+        apr_size_t len;
+        char *buf;
+        apr_size_t n;
+
+        if (APR_BUCKET_IS_EOS(pbktIn)) {
+            APR_BUCKET_REMOVE(pbktIn);
+            APR_BRIGADE_INSERT_TAIL(pbbOut, pbktIn);
+            break;
+        }
+
+        ret=apr_bucket_read(pbktIn, &data, &len, eBlock);
+        if (ret != APR_SUCCESS)
+            return ret;
+
+        buf = ap_malloc(len);
+        for (n=0 ; n < len ; ++n) {
+            buf[n] = data[n];
+        }
+
+        pbktOut = apr_bucket_heap_create(buf, len, 0, c->bucket_alloc);
+        APR_BRIGADE_INSERT_TAIL(pbbOut, pbktOut);
+        apr_bucket_delete(pbktIn);
     }
 
     return APR_SUCCESS;
 }
 
-static int output_filter(ap_filter_t *f, apr_bucket_brigade *bb) {
-    apr_bucket *b;
-    conn_rec *c = f->c;
-    conf_t *ptr = f->ctx;
+static int output_filter(ap_filter_t *f, apr_bucket_brigade *pbbIn) {
+    
+    request_rec *r = f->r;
+    conn_rec *c = r->connection;
+    apr_bucket *pbktIn;
+    apr_bucket_brigade *pbbOut;
 
-    for (b = APR_BRIGADE_FIRST(bb); b != APR_BRIGADE_SENTINEL(bb); b = APR_BUCKET_NEXT(b)) {
+    pbbOut = apr_brigade_create(r->pool, c->bucket_alloc);
+    for (pbktIn = APR_BRIGADE_FIRST(pbbIn);
+         pbktIn != APR_BRIGADE_SENTINEL(pbbIn);
+         pbktIn = APR_BUCKET_NEXT(pbktIn))
+    {
+        const char *data;
+        apr_size_t len;
+        char *buf;
+        apr_size_t n;
+        apr_bucket *pbktOut;
 
-        if (APR_BUCKET_IS_EOS(b)) {
-            apr_bucket *flush = apr_bucket_flush_create(f->c->bucket_alloc);
-            APR_BUCKET_INSERT_BEFORE(b, flush);
+        if (APR_BUCKET_IS_EOS(pbktIn)) {
+            apr_bucket *pbktEOS = apr_bucket_eos_create(c->bucket_alloc);
+            APR_BRIGADE_INSERT_TAIL(pbbOut, pbktEOS);
+            continue;
         }
-        //Next
+
+        apr_bucket_read(pbktIn, &data, &len, APR_BLOCK_READ);
+
+        buf = apr_bucket_alloc(len, c->bucket_alloc);
+        for (n=0 ; n < len ; ++n) {
+            buf[n] = data[n];
+        }
+
+        pbktOut = apr_bucket_heap_create(buf, len, apr_bucket_free,
+                                         c->bucket_alloc);
+        APR_BRIGADE_INSERT_TAIL(pbbOut, pbktOut);
     }
 
-    return ap_pass_brigade(f->next, bb);
+    apr_brigade_cleanup(pbbIn);
+    return ap_pass_brigade(f->next, pbbOut);
 }
 
+module AP_MODULE_DECLARE_DATA security3_module =
+        {
+                STANDARD20_MODULE_STUFF,
+                apache_http_modsecurity_create_loc_conf, // Per-directory configuration
+                apache_http_modsecurity_merge_loc_conf, // Merge handler for per-directory
+                apache_http_modsecurity_create_main_conf, // Per-server conf handler
+                NULL,            // Merge handler for per-server configurations
+                module_directives,
+                register_hooks
+        };
