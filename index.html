@@ -1,25 +1,37 @@
 <!DOCTYPE html>
-<html lang="en-us">
+<html>
   <head>
-    <meta charset="UTF-8">
-    <title>Apache Connector by tahirramzan</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Apache Connector by tahirramzan</title>
   </head>
-  <body>
-    <section class="page-header">
-      <h1 class="project-name">Apache Connector</h1>
-      <h2 class="project-tagline">Apache Connector for libModSec (aka ModSecurity v3)</h2>
-      <a href="https://github.com/tahirramzan/ModSecurity-apache" class="btn">View on GitHub</a>
-      <a href="https://github.com/tahirramzan/ModSecurity-apache/zipball/master" class="btn">Download .zip</a>
-      <a href="https://github.com/tahirramzan/ModSecurity-apache/tarball/master" class="btn">Download .tar.gz</a>
-    </section>
 
-    <section class="main-content">
-      <h1>
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Apache Connector</h1>
+          <h2>Apache Connector for libModSec (aka ModSecurity v3)</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/tahirramzan/ModSecurity-apache/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/tahirramzan/ModSecurity-apache/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/tahirramzan/ModSecurity-apache" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>
 <a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h1>
 
 <p>Before the start of GSoC 2016; I was not considerably aware about the web application firewalls, especially about their internals and working mechanism. As information security and digital forensics are my core research areas of interest so I have dug up all related organizations in the list and I found ModSecurity most sparking for me. The next phase was to submit a proposal, but before that I was needed to choose a project; I have selected “Apache Connector for libModSecurity” because Apache httpd is the most popular, open source web server, and it is used by more than 50% of internet.</p>
@@ -113,19 +125,21 @@ Logging of each transaction is also a functional requirement of this project; lo
 
 <p>Currently, I have completed body extraction and handling through input and output filters, where I have copied request and response bodies with bucket and bucket brigades for passing them to libModSec for further processing. The source code of request headers and response headers is quite buggy and not working as required.</p>
 
-<p><strong>Acknowledgement</strong>
-I would like to thanks and best regards to my mentors Chaim Sanders, Felipe Zimmerle, and Robert Paprocki for their concrete support, quick response, patience and trust on me. I also want to thank my fellow mates Akhil Koul and Manish Malik.</p>
+<h1>
+<a id="acknowledgement" class="anchor" href="#acknowledgement" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Acknowledgement</h1>
 
-<p>Thanks to Google and ModSecurity for providing such a great learning and networking experience.</p>
+<p>I would like to thanks and best regards to my mentors Chaim Sanders, Felipe Zimmerle, and Robert Paprocki for their concrete support, quick response, patience and trust on me. I also want to thank my fellow mates Akhil Koul and Manish Malik.</p>
 
-      <footer class="site-footer">
-        <span class="site-footer-owner"><a href="https://github.com/tahirramzan/ModSecurity-apache">Apache Connector</a> is maintained by <a href="https://github.com/tahirramzan">tahirramzan</a>.</span>
+<p>_Thanks to Google and ModSecurity for providing such a great learning and networking experience. _</p>
+        </section>
 
-        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
-      </footer>
+        <footer>
+          Apache Connector is maintained by <a href="https://github.com/tahirramzan">tahirramzan</a><br>
+          This page was generated by <a href="https://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
 
-    </section>
-
-  
+        
+      </div>
+    </div>
   </body>
 </html>
