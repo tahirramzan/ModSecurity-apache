@@ -1,47 +1,131 @@
 <!DOCTYPE html>
-<html>
+<html lang="en-us">
   <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+    <meta charset="UTF-8">
     <title>Apache Connector by tahirramzan</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
   </head>
-
   <body>
-    <div id="container">
-      <div class="inner">
+    <section class="page-header">
+      <h1 class="project-name">Apache Connector</h1>
+      <h2 class="project-tagline">Apache Connector for libModSec (aka ModSecurity v3)</h2>
+      <a href="https://github.com/tahirramzan/ModSecurity-apache" class="btn">View on GitHub</a>
+      <a href="https://github.com/tahirramzan/ModSecurity-apache/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/tahirramzan/ModSecurity-apache/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
 
-        <header>
-          <h1>Apache Connector</h1>
-          <h2>Apache Connector for libModSec (aka ModSecurity v3)</h2>
-        </header>
+    <section class="main-content">
+      <h1>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h1>
 
-        <section id="downloads" class="clearfix">
-          <a href="https://github.com/tahirramzan/ModSecurity-apache/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
-          <a href="https://github.com/tahirramzan/ModSecurity-apache/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
-          <a href="https://github.com/tahirramzan/ModSecurity-apache" id="view-on-github" class="button"><span>View on GitHub</span></a>
-        </section>
+<p>Before the start of GSoC 2016; I was not considerably aware about the web application firewalls, especially about their internals and working mechanism. As information security and digital forensics are my core research areas of interest so I have dug up all related organizations in the list and I found ModSecurity most sparking for me. The next phase was to submit a proposal, but before that I was needed to choose a project; I have selected “Apache Connector for libModSecurity” because Apache httpd is the most popular, open source web server, and it is used by more than 50% of internet.</p>
 
-        <hr>
+<p>ModSecurity is a web application layer level firewall and libModSecurity is a major rewrite of ModSecurity because ModSecurity version 2.9.0 is available on different platforms, including Apache, IIS and NGINX but it really favors an Apache Deployment. ModSecurity standalone is basically a wrapper that packs requests from different formats into an Apache format, to later be processed by ModSecurity in the same way that it works on an Apache web server. That was certainly the fastest way to have ModSecurity running on different platforms, but at the cost of performance and high amount of dependencies. After splitting the ModSecurity between “connectors” and “core”; the core has been naturally become a library and the connectors become consumers of the library. Hence, ModSecurity core becomes completely independent of the underlying web server and the source code that is required to interact with a given web server is called “connector”. The libModSecurity isn’t feature complete and stable yet and I think that is an edge for student developers like me :)</p>
 
-        <section id="main_content">
-          <h3>
-<a id="welcome" class="anchor" href="#welcome" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Welcome</h3>
-        </section>
+<p>_Point to Ponder: _As defined above that ModSecurity is most favorable for Apache so the question is why connector for Apache, then? It’s simple because version 3 means more advance and modern than earlier versions in terms of performance and features, ModSecurity will be modular architecture. “Core” and “Connectors” is the future of ModSecurity.</p>
 
-        <footer>
-          Apache Connector is maintained by <a href="https://github.com/tahirramzan">tahirramzan</a><br>
-          This page was generated by <a href="https://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
-        </footer>
+<p>Apache Connector for libModSecurity is a currently under-development Apache module in C programming using:</p>
 
-        
-      </div>
-    </div>
+<ul>
+<li>libModSecurity</li>
+<li>Apache HTTP Server API</li>
+<li>Apache Portable Runtime Library</li>
+<li>Apache Portable Runtime Utility Library</li>
+</ul>
+
+<p>This module will be basically based on input and output filters, those enables it to process incoming and outgoing data in a highly flexible and configurable manner; pre-processing of incoming data and post-processing of outgoing data at different phases and parts including:</p>
+
+<ul>
+<li>Request headers</li>
+<li>Request body</li>
+<li>Response headers</li>
+<li>Response body</li>
+<li>Logging</li>
+</ul>
+
+<p>Here are the diagramed representations of input filter/request processing in Figure 1 and output filter/response processing in Figure 2.</p>
+
+<p><img src="https://github.com/tahirramzan/ModSecurity-apache/blob/gh-pages/1.png" alt="">
+Figure 1</p>
+
+<p><img src="https://github.com/tahirramzan/ModSecurity-apache/blob/gh-pages/2.png" alt="">
+Figure 2</p>
+
+<h2>
+<a id="functional-requirements" class="anchor" href="#functional-requirements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Functional Requirements:</h2>
+
+<p><strong>Request Processing</strong>
+There are two parts of request processing:</p>
+
+<p><em>Request Headers Processing</em>
+Acquire the request headers before any other module access it and hold it until processing completes by libModSecurity. This section of processing can pass same request headers or modified request headers to other modules for further processing or decline the request for any further processing and call the logging function to log the transaction.</p>
+
+<p><em>Request Body Processing</em>
+Acquire the request body before any other module access it and hold it until processing completes by libModSecurity. This section of processing can pass same request body or modified request body to other modules for further processing or decline the request for any further processing and call the logging function to log the transaction.</p>
+
+<p><strong>Response Processing</strong>
+There are two parts of response processing:</p>
+
+<p><em>Response Headers Processing</em>
+Acquire the response headers after all other modules’ processing and hold it until processing completes by libModSecurity. This section of processing can pass same response headers or modified response headers to the Apache httpd for serving to the client and call the logging function to log the transaction.</p>
+
+<p><em>Response Body Processing</em>
+Acquire the response body after all other modules’ processing and hold it until processing completes by libModSecurity. This section of processing can pass same response body or modified response body to the Apache httpd for serving to the client and call the logging function to log the transaction.</p>
+
+<p><strong>Logging</strong>
+Logging of each transaction is also a functional requirement of this project; logging will be done for each successful transaction completion and for each unsuccessful transaction finish.</p>
+
+<h2>
+<a id="nonfunctional-requirements" class="anchor" href="#nonfunctional-requirements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Nonfunctional Requirements:</h2>
+
+<p>Here are the some nonfunctional requirements of this project:</p>
+
+<ul>
+<li>Open source</li>
+<li>Documentation</li>
+<li>Efficiency &amp; Effectiveness</li>
+<li>Performance &amp; Stability</li>
+<li>Testability &amp; Usability</li>
+</ul>
+
+<h2>
+<a id="user-interfaces" class="anchor" href="#user-interfaces" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>User Interfaces:</h2>
+
+<p>Not Applicable for this project.</p>
+
+<h2>
+<a id="databases-design-and-schema" class="anchor" href="#databases-design-and-schema" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Databases Design and Schema:</h2>
+
+<p>As for now; according to my understanding, there will not be any need of databases in this project, but if there will be needed for anything related to the database then the Apache database framework will be used. The apr_dbd API provides database operations functionality and ap_dbd API provides database connection management functionality very efficiently and easily.</p>
+
+<h1>
+<a id="source-code-repository" class="anchor" href="#source-code-repository" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Source Code Repository:</h1>
+
+<p><a href="https://github.com/tahirramzan/ModSecurity-apache">Installation Guide, Compilation Recipes and Source Code  Repository  </a></p>
+
+<h1>
+<a id="current-status" class="anchor" href="#current-status" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><em>Current Status</em>
+</h1>
+
+<p>Currently, I have completed body extraction and handling through input and output filters, where I have copied request and response bodies with bucket and bucket brigades for passing them to libModSec for further processing. The source code of request headers and response headers is quite buggy and not working as required.</p>
+
+<p><strong># Acknowledgement</strong>
+I would like to thanks and best regards to my mentors Chaim Sanders, Felipe Zimmerle, and Robert Paprocki for their concrete support, quick response, patience and trust on me. I also want to thank my fellow mates Akhil Koul and Manish Malik.</p>
+
+<p>_Thanks to Google and ModSecurity for providing such a great learning and networking experience. _</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/tahirramzan/ModSecurity-apache">Apache Connector</a> is maintained by <a href="https://github.com/tahirramzan">tahirramzan</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
   </body>
 </html>
