@@ -38,7 +38,7 @@
 
 <p>ModSecurity is a web application layer level firewall and libModSecurity is a major rewrite of ModSecurity because ModSecurity version 2.9.0 is available on different platforms, including Apache, IIS and NGINX but it really favors an Apache Deployment. ModSecurity standalone is basically a wrapper that packs requests from different formats into an Apache format, to later be processed by ModSecurity in the same way that it works on an Apache web server. That was certainly the fastest way to have ModSecurity running on different platforms, but at the cost of performance and high amount of dependencies. After splitting the ModSecurity between “connectors” and “core”; the core has been naturally become a library and the connectors become consumers of the library. Hence, ModSecurity core becomes completely independent of the underlying web server and the source code that is required to interact with a given web server is called “connector”. The libModSecurity isn’t feature complete and stable yet and I think that is an edge for student developers like me :)</p>
 
-<i>Point to Ponder: </i> <p>As defined above that ModSecurity is most favorable for Apache so the question is why connector for Apache, then? It’s simple because version 3 means more advance and modern than earlier versions in terms of performance and features, ModSecurity will be modular architecture. “Core” and “Connectors” is the future of ModSecurity.</p>
+<p>_Point to Ponder: _As defined above that ModSecurity is most favorable for Apache so the question is why connector for Apache, then? It’s simple because version 3 means more advance and modern than earlier versions in terms of performance and features, ModSecurity will be modular architecture. “Core” and “Connectors” is the future of ModSecurity.</p>
 
 <p>Apache Connector for libModSecurity is a currently under-development Apache module in C programming using:</p>
 
@@ -124,6 +124,16 @@ Logging of each transaction is also a functional requirement of this project; lo
 </h1>
 
 <p>Currently, I have completed body extraction and handling through input and output filters, where I have copied request and response bodies with bucket and bucket brigades for passing them to libModSec for further processing. The source code of request headers and response headers is quite buggy and not working as required.</p>
+
+<h1>
+<a id="considerations-concerns-and-confusions" class="anchor" href="#considerations-concerns-and-confusions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><em>Considerations, Concerns and Confusions</em>
+</h1>
+
+<ol>
+<li><p>For headers extraction there are too many options; but we can get those on both input filter and output filter as part of request_rec struct (headers_in and headers_out), I found several functions but no one is looking appropriate to me for libModSec as required by analyzing existing modules.</p></li>
+<li><p>For process connection there are also too many possibilities; IP address vs host address (client and server) which is also confusing that at which point what thing is needed, IP address or Host address or need to process both with two times use of process connection function.</p></li>
+<li><p>For configuration, I am also puzzled that what is appropriate  or , I think connector should work on whole server that whatever come in and go out needs to process with libModSec.</p></li>
+</ol>
 
 <h1>
 <a id="acknowledgement" class="anchor" href="#acknowledgement" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Acknowledgement</h1>
